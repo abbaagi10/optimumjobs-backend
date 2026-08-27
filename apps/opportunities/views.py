@@ -11,14 +11,26 @@ from .permissions import IsOpportunityOrgMember
 from .serializers import OpportunityPublicSerializer, OpportunityManageSerializer
 
 
+from rest_framework import filters as drf_filters
+
+from .filters import OpportunityFilter
+
+
 class PublicOpportunityListView(generics.ListAPIView):
     """
-    GET /api/v1/opportunities/  -> liste publique, uniquement les opportunités PUBLIÉES
-    Accessible sans authentification (visiteur).
+    GET /api/v1/opportunities/
+    Filtres exacts : ?type=job&city=Niamey&is_remote=true&category=1&skills=1,3
+    Recherche : ?search=django
+    Tri : ?ordering=-created_at  ou  ?ordering=salary_min
     """
     serializer_class = OpportunityPublicSerializer
     permission_classes = [permissions.AllowAny]
     queryset = Opportunity.objects.filter(status=Opportunity.Status.PUBLISHED)
+
+    filterset_class = OpportunityFilter
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'published_at', 'salary_min', 'application_deadline']
+    ordering = ['-created_at']
 
 
 class PublicOpportunityDetailView(generics.RetrieveAPIView):
