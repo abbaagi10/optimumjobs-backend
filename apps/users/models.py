@@ -37,19 +37,23 @@ class UserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(unique=True)
-    role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.CANDIDATE)
+    email = models.EmailField('adresse email', unique=True)
+    role = models.CharField('rôle', max_length=20, choices=UserRole.choices, default=UserRole.CANDIDATE)
 
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField('actif', default=True)
+    is_staff = models.BooleanField('membre du staff', default=False)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField('date de création', auto_now_add=True)
+    updated_at = models.DateTimeField('date de mise à jour', auto_now=True)
 
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+
+    class Meta:
+        verbose_name = 'utilisateur'
+        verbose_name_plural = 'utilisateurs'
 
     def __str__(self):
         return self.email

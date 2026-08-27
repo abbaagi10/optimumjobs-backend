@@ -25,6 +25,9 @@ INSTALLED_APPS = [
     # Apps du projet (on les ajoutera au fur et à mesure)
      'apps.users',
      'apps.core',
+     'apps.profiles',
+     'apps.organizations',
+     'apps.opportunities',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
