@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
 
     # Apps du projet (on les ajoutera au fur et à mesure)
      'apps.users',
@@ -50,6 +51,18 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'OptimumJobs+ API',
+    'DESCRIPTION': (
+        "API REST pour la plateforme OptimumJobs+ : offres d'emploi, stages, "
+        "formations, candidatures et profils professionnels."
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 SIMPLE_JWT = {

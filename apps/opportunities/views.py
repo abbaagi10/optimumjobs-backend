@@ -9,6 +9,7 @@ from apps.organizations.models import OrganizationMember
 from .models import Opportunity
 from .permissions import IsOpportunityOrgMember
 from .serializers import OpportunityPublicSerializer, OpportunityManageSerializer
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 
 from rest_framework import filters as drf_filters
@@ -88,6 +89,13 @@ class SubmitForReviewView(APIView):
     Transition : DRAFT -> PENDING_REVIEW
     """
     permission_classes = [permissions.IsAuthenticated, IsOrganization, IsOpportunityOrgMember]
+
+    @extend_schema(
+        summary="Soumettre une opportunité pour validation",
+        description="Fait passer une opportunité de DRAFT (ou REJECTED) à PENDING_REVIEW.",
+        request=None,
+        responses={200: OpportunityManageSerializer, 400: OpenApiResponse(description="Transition invalide")},
+    )
 
     def post(self, request, pk):
         opportunity = generics.get_object_or_404(Opportunity, pk=pk)
