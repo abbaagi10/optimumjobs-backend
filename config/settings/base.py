@@ -32,6 +32,7 @@ INSTALLED_APPS = [
      'apps.applications',
      'apps.documents',
      'apps.notifications',
+     'apps.administration',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
