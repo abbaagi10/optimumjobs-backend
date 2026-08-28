@@ -12,7 +12,6 @@ from .serializers import OpportunityPublicSerializer, OpportunityManageSerialize
 
 
 from rest_framework import filters as drf_filters
-
 from .filters import OpportunityFilter
 
 

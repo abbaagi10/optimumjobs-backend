@@ -29,6 +29,8 @@ INSTALLED_APPS = [
      'apps.profiles',
      'apps.organizations',
      'apps.opportunities',
+     'apps.applications',
+     'apps.documents',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -119,4 +121,18 @@ CORS_ALLOWED_ORIGINS = config(
     default='',
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Sécurité des uploads
+MAX_UPLOAD_SIZE_MB = 5
+ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+ALLOWED_DOCUMENT_MIME_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/png',
+]
 
