@@ -31,6 +31,7 @@ INSTALLED_APPS = [
      'apps.opportunities',
      'apps.applications',
      'apps.documents',
+     'apps.notifications',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'

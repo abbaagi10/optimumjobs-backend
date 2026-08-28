@@ -11,13 +11,10 @@ from apps.organizations.models import OrganizationMember
 from .models import Application
 from .permissions import IsApplicationOwner, IsApplicationOrgMember
 from .serializers import ApplicationSerializer, ApplicationCreateSerializer, ApplicationStatusUpdateSerializer
+from apps.notifications.models import Notification
 
 
 class ApplyToOpportunityView(APIView):
-    """
-    POST /api/v1/opportunities/{id}/apply/
-    Le candidat postule à une opportunité publiée.
-    """
     permission_classes = [permissions.IsAuthenticated, IsCandidate]
 
     def post(self, request, pk):
@@ -32,6 +29,11 @@ class ApplyToOpportunityView(APIView):
         try:
             with transaction.atomic():
                 application = serializer.save(candidate=profile, opportunity=opportunity)
+                Notification.objects.create(
+                    recipient=request.user,
+                    notification_type=Notification.NotificationType.APPLICATION_SUBMITTED,
+                    message=f"Votre candidature pour \"{opportunity.title}\" a été envoyée.",
+                )
         except IntegrityError:
             raise ValidationError({"detail": "Vous avez déjà postulé à cette opportunité."})
 
@@ -79,11 +81,15 @@ class OrganizationApplicationListView(generics.ListAPIView):
 
 
 class UpdateApplicationStatusView(APIView):
-    """
-    PATCH /api/v1/applications/{id}/status/
-    Une organisation fait progresser le statut d'une candidature reçue.
-    """
     permission_classes = [permissions.IsAuthenticated, IsApplicationOrgMember]
+
+    STATUS_MESSAGES = {
+        Application.Status.UNDER_REVIEW: "Votre candidature pour \"{title}\" est en cours d'examen.",
+        Application.Status.SHORTLISTED: "Vous avez été présélectionné(e) pour \"{title}\".",
+        Application.Status.INTERVIEW: "Un entretien vous a été proposé pour \"{title}\".",
+        Application.Status.ACCEPTED: "Votre candidature pour \"{title}\" a été acceptée.",
+        Application.Status.REJECTED: "Votre candidature pour \"{title}\" a été refusée.",
+    }
 
     def patch(self, request, pk):
         application = generics.get_object_or_404(Application, pk=pk)
@@ -91,7 +97,17 @@ class UpdateApplicationStatusView(APIView):
 
         serializer = ApplicationStatusUpdateSerializer(application, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        with transaction.atomic():
+            serializer.save()
+            message_template = self.STATUS_MESSAGES.get(application.status)
+            if message_template:
+                Notification.objects.create(
+                    recipient=application.candidate.user,
+                    notification_type=Notification.NotificationType.APPLICATION_STATUS_CHANGED,
+                    message=message_template.format(title=application.opportunity.title),
+                )
+
         return Response(ApplicationSerializer(application).data)
 
 
