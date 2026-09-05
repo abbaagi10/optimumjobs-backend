@@ -1,4 +1,5 @@
-from rest_framework import generics, permissions
+# apps/administration/views.py
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -126,3 +127,5 @@ class AdminDashboardStatsView(APIView):
                 "submitted": Application.objects.filter(status=Application.Status.SUBMITTED).count(),
             },
         })
+
+

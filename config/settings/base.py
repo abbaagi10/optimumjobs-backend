@@ -2,11 +2,52 @@ from pathlib import Path
 from decouple import config
 from datetime import timedelta
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = config('SECRET_KEY')
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=lambda v: [s.strip() for s in v.split(',')])
+
+# ====== CONFIGURATION CORS - AJOUTER CETTE SECTION ======
+# Pour le développement, autoriser toutes les origines
+CORS_ALLOW_ALL_ORIGINS = True  
+
+# OU pour plus de sécurité, spécifier les origines autorisées
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# Autoriser les cookies/crédentials
+CORS_ALLOW_CREDENTIALS = True
+
+# Méthodes autorisées
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Headers autorisés
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# ====== FIN CONFIGURATION CORS ======
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -16,6 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_filters',
+    'django_extensions',
 
     # Librairies tierces
     'rest_framework',

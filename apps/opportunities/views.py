@@ -1,3 +1,6 @@
+# apps/opportunities/views.py
+# VERSION COMPLÈTE CORRIGÉE
+
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -11,7 +14,6 @@ from .permissions import IsOpportunityOrgMember
 from .serializers import OpportunityPublicSerializer, OpportunityManageSerializer
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
-
 from rest_framework import filters as drf_filters
 from .filters import OpportunityFilter
 
@@ -23,23 +25,79 @@ class PublicOpportunityListView(generics.ListAPIView):
     Recherche : ?search=django
     Tri : ?ordering=-created_at  ou  ?ordering=salary_min
     """
-    serializer_class = OpportunityPublicSerializer
+    # ✅ CHANGER : Ne pas filtrer par défaut
+    queryset = Opportunity.objects.all()
     permission_classes = [permissions.AllowAny]
-    queryset = Opportunity.objects.filter(status=Opportunity.Status.PUBLISHED)
 
     filterset_class = OpportunityFilter
     search_fields = ['title', 'description']
     ordering_fields = ['created_at', 'published_at', 'salary_min', 'application_deadline']
     ordering = ['-created_at']
 
+    def get_serializer_class(self):
+        """
+        ✅ Utiliser le bon serializer selon le rôle de l'utilisateur
+        """
+        user = self.request.user
+        # Si l'utilisateur est admin, utiliser le serializer complet
+        if user and user.is_authenticated and user.role == 'admin':
+            return OpportunityManageSerializer
+        # Sinon, utiliser le serializer public
+        return OpportunityPublicSerializer
+
+    def get_queryset(self):
+        """
+        ✅ Filtrer selon le rôle de l'utilisateur et les paramètres
+        """
+        queryset = super().get_queryset()
+        user = self.request.user
+        
+        # 🔥 Si l'utilisateur est admin, retourner toutes les offres (avec filtres)
+        if user and user.is_authenticated and user.role == 'admin':
+            # Appliquer le filtre de statut si présent
+            status_param = self.request.query_params.get('status')
+            if status_param:
+                queryset = queryset.filter(status=status_param)
+            return queryset
+        
+        # 🔥 Si l'utilisateur est une organisation, montrer ses offres + publiées
+        if user and user.is_authenticated and user.role == 'organization':
+            # Montrer les offres publiées + les offres de l'organisation
+            org_ids = OrganizationMember.objects.filter(user=user).values_list('organization_id', flat=True)
+            queryset = queryset.filter(
+                models.Q(status=Opportunity.Status.PUBLISHED) |
+                models.Q(organization_id__in=org_ids)
+            )
+            return queryset
+        
+        # 🔥 Pour les utilisateurs non authentifiés ou candidats
+        # Ne montrer que les offres PUBLISHED
+        return queryset.filter(status=Opportunity.Status.PUBLISHED)
+
 
 class PublicOpportunityDetailView(generics.RetrieveAPIView):
     """
     GET /api/v1/opportunities/{id}/  -> détail public (uniquement si publiée)
     """
-    serializer_class = OpportunityPublicSerializer
+    queryset = Opportunity.objects.all()
     permission_classes = [permissions.AllowAny]
-    queryset = Opportunity.objects.filter(status=Opportunity.Status.PUBLISHED)
+
+    def get_serializer_class(self):
+        user = self.request.user
+        if user and user.is_authenticated and user.role == 'admin':
+            return OpportunityManageSerializer
+        return OpportunityPublicSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        
+        # Admin peut voir toutes les offres
+        if user and user.is_authenticated and user.role == 'admin':
+            return queryset
+        
+        # Sinon, seulement PUBLISHED
+        return queryset.filter(status=Opportunity.Status.PUBLISHED)
 
 
 class MyOrganizationOpportunityListCreateView(generics.ListCreateAPIView):

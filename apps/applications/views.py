@@ -1,3 +1,6 @@
+# apps/applications/views.py
+# C:\optimumjobs-backend\apps\applications\views.py
+
 from django.db import IntegrityError, transaction
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -8,7 +11,8 @@ from apps.core.permissions import IsCandidate
 from apps.opportunities.models import Opportunity
 from apps.profiles.models import CandidateProfile
 from apps.organizations.models import OrganizationMember
-from .models import Application
+from apps.documents.models import Document  # ✅ AJOUTÉ
+from .models import Application, ApplicationDocument  # ✅ AJOUTÉ ApplicationDocument
 from .permissions import IsApplicationOwner, IsApplicationOrgMember
 from .serializers import ApplicationSerializer, ApplicationCreateSerializer, ApplicationStatusUpdateSerializer
 from apps.notifications.models import Notification
@@ -28,7 +32,13 @@ class ApplyToOpportunityView(APIView):
 
         try:
             with transaction.atomic():
+                # ✅ Créer la candidature
                 application = serializer.save(candidate=profile, opportunity=opportunity)
+                
+                # ✅ Lier automatiquement le CV du candidat à la candidature
+                self._link_cv_to_application(request.user, application)
+                
+                # ✅ Notification au candidat
                 Notification.objects.create(
                     recipient=request.user,
                     notification_type=Notification.NotificationType.APPLICATION_SUBMITTED,
@@ -38,6 +48,30 @@ class ApplyToOpportunityView(APIView):
             raise ValidationError({"detail": "Vous avez déjà postulé à cette opportunité."})
 
         return Response(ApplicationSerializer(application).data, status=status.HTTP_201_CREATED)
+
+    def _link_cv_to_application(self, user, application):
+        """
+        Lie automatiquement le CV du candidat à la candidature.
+        """
+        # Récupérer le CV du candidat (document_type='cv')
+        cv = Document.objects.filter(
+            owner=user,
+            document_type='cv'
+        ).first()
+        
+        if cv:
+            # Vérifier si le document est déjà lié à cette candidature
+            existing = ApplicationDocument.objects.filter(
+                application=application,
+                document=cv
+            ).exists()
+            
+            if not existing:
+                # Lier le CV à la candidature
+                ApplicationDocument.objects.create(
+                    application=application,
+                    document=cv
+                )
 
 
 class MyApplicationListView(generics.ListAPIView):
