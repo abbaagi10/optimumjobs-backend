@@ -1,57 +1,44 @@
+# C:\optimumjobs-backend\config\settings.py
+
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
+import os
+import dj_database_url
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# ✅ SECRET_KEY
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-default-key')
 
-SECRET_KEY = config('SECRET_KEY')
+# ✅ DEBUG
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=lambda v: [s.strip() for s in v.split(',')])
+# ✅ ALLOWED_HOSTS
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.onrender.com,.railway.app').split(',')
 
-# ====== CONFIGURATION CORS - AJOUTER CETTE SECTION ======
-# Pour le développement, autoriser toutes les origines
-CORS_ALLOW_ALL_ORIGINS = True  
-
-# AJOUTER CETTE LIGNE (ROOT_URLCONF)
+# ✅ ROOT_URLCONF - ESSENTIEL
 ROOT_URLCONF = 'config.urls'
 
-# OU pour plus de sécurité, spécifier les origines autorisées
+# ✅ CORS
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://optimumjobs-frontend.onrender.com",
 ]
-
-# Autoriser les cookies/crédentials
 CORS_ALLOW_CREDENTIALS = True
-
-# Méthodes autorisées
 CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+    'DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT',
 ]
-
-# Headers autorisés
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    'accept', 'accept-encoding', 'authorization', 'content-type',
+    'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
 ]
 
-# ====== FIN CONFIGURATION CORS ======
-
+# ✅ INSTALLED_APPS - COMPLET
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -61,30 +48,25 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_filters',
     'django_extensions',
-
-    # Librairies tierces
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
-
-    # Apps du projet (on les ajoutera au fur et à mesure)
-     'apps.users',
-     'apps.core',
-     'apps.profiles',
-     'apps.organizations',
-     'apps.opportunities',
-     'apps.applications',
-     'apps.documents',
-     'apps.notifications',
-     'apps.administration',
+    'apps.users',
+    'apps.core',
+    'apps.profiles',
+    'apps.organizations',
+    'apps.opportunities',
+    'apps.applications',
+    'apps.documents',
+    'apps.notifications',
+    'apps.administration',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-
-
+# ✅ REST FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -96,16 +78,12 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
-
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'OptimumJobs+ API',
-    'DESCRIPTION': (
-        "API REST pour la plateforme OptimumJobs+ : offres d'emploi, stages, "
-        "formations, candidatures et profils professionnels."
-    ),
+    'DESCRIPTION': "API REST pour la plateforme OptimumJobs+",
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
@@ -117,9 +95,11 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
+# ✅ MIDDLEWARE - COMPLET
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',   # Doit être placé tôt dans la liste
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -127,8 +107,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -148,16 +126,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
+# ✅ DATABASE
+DATABASE_URL = config('DATABASE_URL', default='')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='optimumjobs'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -167,32 +152,22 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'fr-fr'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Niamey'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# CORS
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='',
-    cast=lambda v: [s.strip() for s in v.split(',')]
-)
+# ✅ STATIC FILES
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Sécurité des uploads
-MAX_UPLOAD_SIZE_MB = 5
-ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
-ALLOWED_DOCUMENT_MIME_TYPES = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'image/jpeg',
-    'image/png',
-]
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ✅ SECURITY
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
