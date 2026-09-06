@@ -1,3 +1,4 @@
+#config\settings\base.py
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
@@ -9,22 +10,13 @@ SECRET_KEY = config('SECRET_KEY')
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=lambda v: [s.strip() for s in v.split(',')])
 
-# ====== CONFIGURATION CORS - AJOUTER CETTE SECTION ======
-# Pour le développement, autoriser toutes les origines
-CORS_ALLOW_ALL_ORIGINS = True  
+# ====== CONFIGURATION CORS ======
+CORS_ALLOW_ALL_ORIGINS = True
 
-# OU pour plus de sécurité, spécifier les origines autorisées
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+ROOT_URLCONF = 'config.urls'
 
-# Autoriser les cookies/crédentials
 CORS_ALLOW_CREDENTIALS = True
 
-# Méthodes autorisées
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -34,7 +26,6 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
-# Headers autorisés
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -66,7 +57,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
 
-    # Apps du projet (on les ajoutera au fur et à mesure)
+    # Apps du projet
      'apps.users',
      'apps.core',
      'apps.profiles',
@@ -80,8 +71,6 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-
-
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -93,7 +82,6 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
-
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
@@ -116,7 +104,8 @@ SIMPLE_JWT = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',   # Doit être placé tôt dans la liste
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # AJOUTÉ — sert les fichiers statiques en prod
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -168,7 +157,16 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+# ====== FICHIERS STATIQUES ======
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'   # AJOUTÉ — requis par collectstatic
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+# ====== FIN FICHIERS STATIQUES ======
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -189,7 +187,7 @@ ALLOWED_DOCUMENT_MIME_TYPES = [
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/zip',   # AJOUTÉ — puremagic détecte souvent les .docx comme des ZIP
     'image/jpeg',
     'image/png',
 ]
-
